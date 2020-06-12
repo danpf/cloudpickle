@@ -26,6 +26,7 @@ import typing
 from functools import wraps
 
 import pytest
+import attr
 
 try:
     # try importing numpy and scipy. These are not hard dependencies and
@@ -56,6 +57,11 @@ from _cloudpickle_testpkg import relative_imports_factory
 
 
 _TEST_GLOBAL_VARIABLE = "default_value"
+
+
+@attr.s
+class Foo:
+    x: int = attr.ib()
 
 
 class RaiserOnPickle(object):
@@ -190,6 +196,20 @@ class CloudPickleTest(unittest.TestCase):
 
         self.assertTrue("exit" in foo.__code__.co_names)
         cloudpickle.dumps(foo)
+
+    def test_attr(self):
+        print(cloudpickle.dumps(Foo))
+        test_str = (
+                "import cloudpickle\n"
+                "import attr\n"
+                "@attr.s\n"
+                "class Foo:\n"
+                "    x: int = attr.ib()\n"
+                "print(cloudpickle.dumps(Foo))\n")
+        with open("hello.py", "w") as fh:
+            fh.write(test_str)
+        ret = subprocess.call(["python", "hello.py"])
+        assert ret == 0
 
     def test_buffer(self):
         try:
